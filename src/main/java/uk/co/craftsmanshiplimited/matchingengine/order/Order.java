@@ -20,11 +20,12 @@ public class Order {
     private OrderOrigin origin;
 
     public Order(
-            final int id, final BigDecimal price, final int quantity,
-            final Instant createdAt, final OrderType type,
+            final int id, final int submitterId, final BigDecimal price,
+            final int quantity, final Instant createdAt, final OrderType type,
             final OrderSideType side, final OrderOrigin origin) {
 
         this.id = id;
+        this.submitterId = submitterId;
         this.price = price;
         this.quantity = quantity;
         this.createdAt = createdAt;

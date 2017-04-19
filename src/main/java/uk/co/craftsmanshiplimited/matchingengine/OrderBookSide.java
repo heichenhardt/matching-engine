@@ -3,25 +3,38 @@ package uk.co.craftsmanshiplimited.matchingengine;
 import uk.co.craftsmanshiplimited.matchingengine.order.Order;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.Deque;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.Map;
 import java.util.LinkedList;
 
 
 /**
  * Created by Henrik on 08/04/2017.
  */
-abstract class OrderSide {
+class OrderBookSide {
 
     private NavigableMap<BigDecimal, Deque<Order>> priceToOrderQueue;
 
-    public OrderSide() {
-        this.priceToOrderQueue = new TreeMap<>();
+    OrderBookSide(final Comparator<BigDecimal> comparator) {
+        this.priceToOrderQueue = new TreeMap<>(comparator);
     }
 
-    abstract Map.Entry<BigDecimal, Deque<Order>> getBestOrder();
+    final Map.Entry<BigDecimal, Deque<Order>> getBestOrder() {
+        return this.priceToOrderQueue.firstEntry();
+    }
+
+    final boolean isMatchingPrice(final BigDecimal orderPrice) {
+        //I know we discussed to use priceToOrderQueue.headMap here.
+        //But I think its actually even simpler to just use the comparator
+        // we passed into the OrderBook itself.
+        //That way we don't have to create a new Map
+        return this.priceToOrderQueue.comparator()
+                .compare(this.peekBest().getPrice(), orderPrice) <= 0;
+
+    }
 
     final void add(final Order newOrder) {
         Deque<Order> orderQueue =

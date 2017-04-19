@@ -4,32 +4,31 @@ import uk.co.craftsmanshiplimited.matchingengine.order.Order;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.function.BiPredicate;
 
 /**
  * Created by Henrik on 08/04/2017.
  */
 public class LimitOrderBook {
 
-    private OrderSide askSide;
-    private OrderSide bidSide;
+    private OrderBookSide askSide;
+    private OrderBookSide bidSide;
     private Deque<Trade> trades;
 
     public LimitOrderBook() {
-        this.askSide = new AskSide();
-        this.bidSide = new BidSide();
+        final Comparator<BigDecimal> comparator = Comparator.naturalOrder();
+        this.askSide = new OrderBookSide(comparator);
+        this.bidSide = new OrderBookSide(comparator.reversed());
         this.trades = new LinkedList<>();
     }
 
     public final void process(final Order newOrder) {
         if (newOrder.isAsk()) {
-            processSide(newOrder, this.askSide, this.bidSide,
-                    (best, current) -> best.compareTo(current) <= 0);
+            processSide(newOrder, this.askSide, this.bidSide);
         } else if (newOrder.isBid()) {
-            processSide(newOrder, this.bidSide, this.askSide,
-                    (best, current) -> best.compareTo(current) >= 0);
+            processSide(newOrder, this.bidSide, this.askSide);
         } else {
             throw new IllegalStateException(
                     "Malformed order received (neither ask nor bid)");
@@ -58,12 +57,14 @@ public class LimitOrderBook {
 
     private void processSide(
             final Order newOrder,
-            final OrderSide selfSide,
-            final OrderSide cpSide,
-            final BiPredicate<BigDecimal, BigDecimal> predicate) {
+            final OrderBookSide selfSide,
+            final OrderBookSide cpSide) {
 
-        while (hasMoreEligibleCPOrders(newOrder, cpSide, predicate)) {
+        while (!newOrder.isFilled()
+                && hasMoreEligibleCPOrders(newOrder, cpSide)) {
+
             final Order bestOrder = cpSide.peekBest();
+            //Take filled orders off the order book.
             if (newOrder.getQuantity() >= bestOrder.getQuantity()) {
                 cpSide.pollBest();
             }
@@ -85,7 +86,8 @@ public class LimitOrderBook {
     }
 
     private Trade createTrade(
-            final Order newOrder, final Order bestOrder, final int tradeQuantity) {
+            final Order newOrder, final Order bestOrder,
+            final int tradeQuantity) {
 
         return new Trade(
                 bestOrder.getSubmitterId(),
@@ -96,15 +98,13 @@ public class LimitOrderBook {
     }
 
     private boolean hasMoreEligibleCPOrders(
-            final Order newOrder, final OrderSide cpSide,
-            final BiPredicate<BigDecimal, BigDecimal> predicate) {
+            final Order newOrder, final OrderBookSide cpSide) {
 
-        return !newOrder.isFilled()
-                && cpSide.peekBest() != null
+        final Order bestOrder = cpSide.peekBest();
+
+        return bestOrder != null
                 && (newOrder.isMarketOrder()
-                    || predicate.test(
-                        cpSide.peekBest().getPrice(),
-                        newOrder.getPrice()))
-                && !(newOrder.isLP() && cpSide.peekBest().isLP());
+                    || cpSide.isMatchingPrice(newOrder.getPrice()))
+                && !(newOrder.isLP() && bestOrder.isLP());
     }
 }

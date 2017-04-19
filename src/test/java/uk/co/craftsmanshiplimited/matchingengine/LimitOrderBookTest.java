@@ -50,7 +50,7 @@ public class LimitOrderBookTest {
         this.book.process(createLimitAskOrder(HIGHER_PRICE, QUANTITY));
 
         final Order bestAsk = this.book.peekBestAsk();
-        assertEquals(HIGHER_PRICE, bestAsk.getPrice());
+        assertEquals(LOWER_PRICE, bestAsk.getPrice());
     }
 
     @Test
@@ -59,7 +59,7 @@ public class LimitOrderBookTest {
         this.book.process(createLimitBidOrder(HIGHER_PRICE, QUANTITY));
 
         final Order bestBid = this.book.peekBestBid();
-        assertEquals(LOWER_PRICE, bestBid.getPrice());
+        assertEquals(HIGHER_PRICE, bestBid.getPrice());
     }
 
     @Test
@@ -173,8 +173,8 @@ public class LimitOrderBookTest {
 
     @Test
     public void shouldNotMatchAskIfPriceIsTooLow() throws Exception {
-        this.book.process(createLimitBidOrder(HIGHER_PRICE, QUANTITY));
-        this.book.process(createLimitAskOrder(LOWER_PRICE, QUANTITY));
+        this.book.process(createLimitBidOrder(LOWER_PRICE, QUANTITY));
+        this.book.process(createLimitAskOrder(HIGHER_PRICE, QUANTITY));
 
         assertNotNull(this.book.peekBestBid());
         assertNotNull(this.book.peekBestAsk());
@@ -183,8 +183,8 @@ public class LimitOrderBookTest {
 
     @Test
     public void shouldNotMatchBidIfPriceIsTooLow() throws Exception {
-        this.book.process(createLimitAskOrder(LOWER_PRICE, QUANTITY));
-        this.book.process(createLimitBidOrder(HIGHER_PRICE, QUANTITY));
+        this.book.process(createLimitAskOrder(HIGHER_PRICE, QUANTITY));
+        this.book.process(createLimitBidOrder(LOWER_PRICE, QUANTITY));
 
         assertNotNull(this.book.peekBestBid());
         assertNotNull(this.book.peekBestAsk());
@@ -193,24 +193,24 @@ public class LimitOrderBookTest {
 
     @Test
     public void shouldMatchAskIfPriceIsTooHigh() throws Exception {
-        this.book.process(createLimitBidOrder(LOWER_PRICE, QUANTITY));
-        this.book.process(createLimitAskOrder(HIGHER_PRICE, QUANTITY));
-
-        assertNull(this.book.peekBestBid());
-        assertNull(this.book.peekBestAsk());
-        assertTrades(1, QUANTITY);
-        assertEquals(LOWER_PRICE, this.book.getLastTrade().getPrice());
-    }
-
-    @Test
-    public void shouldMatchBidIfPriceIsTooLow() throws Exception {
-        this.book.process(createLimitAskOrder(HIGHER_PRICE, QUANTITY));
-        this.book.process(createLimitBidOrder(LOWER_PRICE, QUANTITY));
+        this.book.process(createLimitBidOrder(HIGHER_PRICE, QUANTITY));
+        this.book.process(createLimitAskOrder(LOWER_PRICE, QUANTITY));
 
         assertNull(this.book.peekBestBid());
         assertNull(this.book.peekBestAsk());
         assertTrades(1, QUANTITY);
         assertEquals(HIGHER_PRICE, this.book.getLastTrade().getPrice());
+    }
+
+    @Test
+    public void shouldMatchBidIfPriceIsTooLow() throws Exception {
+        this.book.process(createLimitAskOrder(LOWER_PRICE, QUANTITY));
+        this.book.process(createLimitBidOrder(HIGHER_PRICE, QUANTITY));
+
+        assertNull(this.book.peekBestBid());
+        assertNull(this.book.peekBestAsk());
+        assertTrades(1, QUANTITY);
+        assertEquals(LOWER_PRICE, this.book.getLastTrade().getPrice());
     }
 
     @Test
